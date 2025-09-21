@@ -57,7 +57,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{id}")
-    public void deletePost(@PathVariable("id") Long postId) {
+    public void deletePostById(@PathVariable("id") Long postId) {
         log.info("DELETE /api/posts/{id} with params(id {})", postId);
     }
 
