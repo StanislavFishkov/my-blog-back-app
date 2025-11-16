@@ -11,9 +11,9 @@ import ru.practicum.myblogbackapp.dto.post.view.PostPreview;
 import java.util.List;
 
 @Data
-@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder(toBuilder = true)
 public class PostDto {
     private Long id;
     private String title;

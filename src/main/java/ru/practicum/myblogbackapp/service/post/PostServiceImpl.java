@@ -1,0 +1,124 @@
+package ru.practicum.myblogbackapp.service.post;
+
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import ru.practicum.myblogbackapp.dto.post.NewPostDto;
+import ru.practicum.myblogbackapp.dto.post.PostDto;
+import ru.practicum.myblogbackapp.dto.post.PostsDto;
+import ru.practicum.myblogbackapp.dto.post.UpdatePostDto;
+import ru.practicum.myblogbackapp.mapper.post.PostMapper;
+import ru.practicum.myblogbackapp.model.post.Post;
+import ru.practicum.myblogbackapp.model.post.PostImage;
+import ru.practicum.myblogbackapp.repository.post.PostImageRepository;
+import ru.practicum.myblogbackapp.repository.post.PostRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly=true)
+public class PostServiceImpl implements PostService {
+    private final PostRepository postRepository;
+    private final PostImageRepository postImageRepository;
+
+    private final PostMapper postMapper;
+
+    @Override
+    @Transactional
+    public PostDto createPost(NewPostDto newPostDto) {
+        Post post = postRepository.save(postMapper.toEntity(newPostDto));
+
+        log.info("Post is created: {}", post);
+        return postMapper.toDto(post);
+    }
+
+    @Override
+    public PostDto getPostById(Long postId) {
+        Post post = checkAndGetPostById(postId);
+
+        log.info("Post is requested by id: {}", post.getId());
+        return postMapper.toDto(post);
+    }
+
+    @Override
+    public PostsDto findPosts(String search, Integer pageNumber, Integer pageSize) {
+        int offset = (pageNumber - 1) * pageSize;
+
+        List<Post> posts = postRepository.findPosts(search, pageSize, offset);
+        long totalElements = postRepository.countPosts(search);
+
+        int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+        if (totalPages == 0) totalPages = 1;   // если нет результатов
+
+        boolean hasPrev = pageNumber > 1;
+        boolean hasNext = pageNumber < totalPages;
+        int lastPage = totalPages;
+
+        return PostsDto.builder()
+                .posts(postMapper.toDto(posts))
+                .hasPrev(hasPrev)
+                .hasNext(hasNext)
+                .lastPage(lastPage)
+                .build();
+
+    }
+
+    @Override
+    public PostDto updatePost(Long postId, UpdatePostDto updatePostDto) {
+        return null;
+    }
+
+    @Override
+    public void deletePostById(Long postId) {
+        postRepository.deleteById(postId);
+        log.info("Post is deleted by id: {}", postId);
+    }
+
+    @Override
+    public Integer likePost(Long postId) {
+        Post post = checkAndGetPostById(postId);
+
+        post.setLikesCount(post.getLikesCount() + 1);
+        log.info("Post with id {} is liked, current number of likes is {}", post.getId(), post.getLikesCount());
+        return post.getLikesCount();
+    }
+
+    @Override
+    @SneakyThrows
+    public void updatePostImage(Long postId, MultipartFile imageFile) {
+        checkAndGetPostById(postId);
+
+        PostImage postImage = postImageRepository.findById(postId)
+                .orElse(PostImage.builder()
+                        .postId(postId)
+                        .build());
+        postImage.setImageData(imageFile.getBytes());
+
+        postImage = postImageRepository.save(postImage);
+        log.info("Image with id {} is saved for post with id {}", postImage.getId(), postImage.getPostId());
+    }
+
+    @Override
+    public byte[] getPostImage(Long postId) {
+        checkAndGetPostById(postId);
+
+        Optional<PostImage> postImage = postImageRepository.findByPostId(postId);
+
+        postImage.ifPresentOrElse(image -> log.info("Image is found for post with id {}", image.getPostId()),
+                () -> log.info("Image is not found for post with id {}", postId));
+        return postImage
+                .map(PostImage::getImageData)
+                .orElse(null);
+    }
+
+    private Post checkAndGetPostById(Long postId) {
+        return postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post doesn't exist with id: %s".formatted(postId)));
+    }
+}

@@ -16,6 +16,12 @@ java {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release.set(21)
+
+    // mapstruct
+    options.annotationProcessorPath = configurations.annotationProcessor
+    options.compilerArgs += [
+            "-Amapstruct.defaultComponentModel=spring"
+    ]
 }
 
 repositories {
@@ -35,6 +41,7 @@ dependencyManagement {
 }
 
 dependencies {
+    // spring
     implementation 'org.springframework:spring-webmvc'
     implementation "org.springframework.data:spring-data-jdbc:$springDataJDBCVersion"
 
@@ -51,6 +58,13 @@ dependencies {
     // lombok
     compileOnly "org.projectlombok:lombok:$lombokVersion"
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+
+    // mapstruct
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+    // lombok‑mapstruct binding
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
 
     // test
     testImplementation 'org.springframework:spring-test'
