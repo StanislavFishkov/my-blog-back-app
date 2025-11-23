@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostsDto {
-    private List<PostDto> posts;
+    private List<PostPreviewDto> posts;
     private Boolean hasPrev;
     private Boolean hasNext;
     private Integer lastPage;

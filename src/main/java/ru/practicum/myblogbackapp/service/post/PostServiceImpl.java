@@ -8,24 +8,29 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.practicum.myblogbackapp.dto.post.NewPostDto;
 import ru.practicum.myblogbackapp.dto.post.PostDto;
+import ru.practicum.myblogbackapp.dto.post.PostPreviewDto;
 import ru.practicum.myblogbackapp.dto.post.PostsDto;
 import ru.practicum.myblogbackapp.dto.post.UpdatePostDto;
 import ru.practicum.myblogbackapp.mapper.post.PostMapper;
 import ru.practicum.myblogbackapp.model.post.Post;
 import ru.practicum.myblogbackapp.model.post.PostImage;
+import ru.practicum.myblogbackapp.repository.comment.CommentRepository;
 import ru.practicum.myblogbackapp.repository.post.PostImageRepository;
 import ru.practicum.myblogbackapp.repository.post.PostRepository;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly=true)
+@Transactional(readOnly = true)
 public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
+    private final CommentRepository commentRepository;
 
     private final PostMapper postMapper;
 
@@ -34,24 +39,27 @@ public class PostServiceImpl implements PostService {
     public PostDto createPost(NewPostDto newPostDto) {
         Post post = postRepository.save(postMapper.toEntity(newPostDto));
 
-        log.info("Post is created: {}", post);
-        return postMapper.toDto(post);
+        PostDto postDto = postMapper.toDto(post);
+        log.info("Post is created: {}", postDto);
+        return postDto;
     }
 
     @Override
     public PostDto getPostById(Long postId) {
         Post post = checkAndGetPostById(postId);
+        Long commentsCount = commentRepository.countByPostId(postId);
 
-        log.info("Post is requested by id: {}", post.getId());
-        return postMapper.toDto(post);
+        PostDto postDto = postMapper.toDto(post, commentsCount);
+        log.info("Post is requested by id: {}", postDto);
+        return postDto;
     }
 
     @Override
     public PostsDto findPosts(String search, Integer pageNumber, Integer pageSize) {
         int offset = (pageNumber - 1) * pageSize;
 
-        List<Post> posts = postRepository.findPosts(search, pageSize, offset);
-        long totalElements = postRepository.countPosts(search);
+        List<Post> posts = postRepository.findPosts(pageSize, offset);
+        long totalElements = postRepository.count();
 
         int totalPages = (int) Math.ceil((double) totalElements / pageSize);
         if (totalPages == 0) totalPages = 1;   // если нет результатов
@@ -60,8 +68,12 @@ public class PostServiceImpl implements PostService {
         boolean hasNext = pageNumber < totalPages;
         int lastPage = totalPages;
 
+        List<PostPreviewDto> postsDto = postMapper.toPreviewDto(posts);
+
+        enrichWithAdditionalFields(postsDto);
+
         return PostsDto.builder()
-                .posts(postMapper.toDto(posts))
+                .posts(postsDto)
                 .hasPrev(hasPrev)
                 .hasNext(hasNext)
                 .lastPage(lastPage)
@@ -70,31 +82,46 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public PostDto updatePost(Long postId, UpdatePostDto updatePostDto) {
-        return null;
+        if (!Objects.equals(postId, updatePostDto.getId()))
+            throw new IllegalArgumentException("PostId from path doesn't match postId in updatePostDto");
+
+        Post post = checkAndGetPostById(postId);
+        post = postRepository.save(postMapper.update(post, updatePostDto));
+        Long commentsCount = commentRepository.countByPostId(postId);
+
+        PostDto postDto = postMapper.toDto(post, commentsCount);
+        log.info("Post is updated: {}", postDto);
+        return postDto;
     }
 
     @Override
+    @Transactional
     public void deletePostById(Long postId) {
         postRepository.deleteById(postId);
         log.info("Post is deleted by id: {}", postId);
     }
 
     @Override
+    @Transactional
     public Integer likePost(Long postId) {
         Post post = checkAndGetPostById(postId);
 
         post.setLikesCount(post.getLikesCount() + 1);
+        postRepository.save(post);
+
         log.info("Post with id {} is liked, current number of likes is {}", post.getId(), post.getLikesCount());
         return post.getLikesCount();
     }
 
     @Override
     @SneakyThrows
+    @Transactional
     public void updatePostImage(Long postId, MultipartFile imageFile) {
         checkAndGetPostById(postId);
 
-        PostImage postImage = postImageRepository.findById(postId)
+        PostImage postImage = postImageRepository.findByPostId(postId)
                 .orElse(PostImage.builder()
                         .postId(postId)
                         .build());
@@ -115,6 +142,16 @@ public class PostServiceImpl implements PostService {
         return postImage
                 .map(PostImage::getImageData)
                 .orElse(null);
+    }
+
+    private void enrichWithAdditionalFields(List<? extends PostDto> postsDto) {
+        List<Long> postIds = postsDto.stream().map(PostDto::getId).toList();
+
+        Map<Long, Long> commentsCountByPostId = commentRepository.countGroupedByPostId(postIds);
+
+        postsDto
+                .forEach(post ->
+                        post.setCommentsCount(commentsCountByPostId.getOrDefault(post.getId(), 0L)));
     }
 
     private Post checkAndGetPostById(Long postId) {

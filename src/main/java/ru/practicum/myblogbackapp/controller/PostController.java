@@ -1,6 +1,5 @@
 package ru.practicum.myblogbackapp.controller;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.practicum.myblogbackapp.dto.post.NewPostDto;
 import ru.practicum.myblogbackapp.dto.post.PostDto;
-import ru.practicum.myblogbackapp.dto.post.view.PostPreview;
 import ru.practicum.myblogbackapp.dto.post.PostsDto;
 import ru.practicum.myblogbackapp.dto.post.UpdatePostDto;
 import ru.practicum.myblogbackapp.service.post.PostService;
@@ -50,7 +48,6 @@ public class PostController {
     }
 
     @GetMapping
-    @JsonView(PostPreview.class)
     public PostsDto findPosts(@RequestParam("search") String search,
                               @PositiveOrZero @RequestParam("pageNumber") Integer pageNumber,
                               @Positive @RequestParam("pageSize") Integer pageSize) {
