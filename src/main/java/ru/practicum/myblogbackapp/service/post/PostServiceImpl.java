@@ -17,6 +17,7 @@ import ru.practicum.myblogbackapp.model.post.PostImage;
 import ru.practicum.myblogbackapp.repository.comment.CommentRepository;
 import ru.practicum.myblogbackapp.repository.post.PostImageRepository;
 import ru.practicum.myblogbackapp.repository.post.PostRepository;
+import ru.practicum.myblogbackapp.repository.tag.TagRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final CommentRepository commentRepository;
+    private final TagRepository tagRepository;
 
     private final PostMapper postMapper;
 
@@ -38,8 +40,9 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public PostDto createPost(NewPostDto newPostDto) {
         Post post = postRepository.save(postMapper.toEntity(newPostDto));
+        tagRepository.upsertTagsAndAssignToPost(post.getId(), newPostDto.getTags());
 
-        PostDto postDto = postMapper.toDto(post);
+        PostDto postDto = postMapper.toDto(post, 0L,  newPostDto.getTags());
         log.info("Post is created: {}", postDto);
         return postDto;
     }
@@ -49,7 +52,7 @@ public class PostServiceImpl implements PostService {
         Post post = checkAndGetPostById(postId);
         Long commentsCount = commentRepository.countByPostId(postId);
 
-        PostDto postDto = postMapper.toDto(post, commentsCount);
+        PostDto postDto = postMapper.toDto(post, commentsCount, tagRepository.findByPostId(postId));
         log.info("Post is requested by id: {}", postDto);
         return postDto;
     }
@@ -89,9 +92,11 @@ public class PostServiceImpl implements PostService {
 
         Post post = checkAndGetPostById(postId);
         post = postRepository.save(postMapper.update(post, updatePostDto));
+        tagRepository.upsertTagsAndAssignToPost(postId, updatePostDto.getTags());
+
         Long commentsCount = commentRepository.countByPostId(postId);
 
-        PostDto postDto = postMapper.toDto(post, commentsCount);
+        PostDto postDto = postMapper.toDto(post, commentsCount, updatePostDto.getTags());
         log.info("Post is updated: {}", postDto);
         return postDto;
     }
@@ -148,10 +153,13 @@ public class PostServiceImpl implements PostService {
         List<Long> postIds = postsDto.stream().map(PostDto::getId).toList();
 
         Map<Long, Long> commentsCountByPostId = commentRepository.countGroupedByPostId(postIds);
+        Map<Long, List<String>> tagsByPostId = tagRepository.findGroupedByPostId(postIds);
 
         postsDto
-                .forEach(post ->
-                        post.setCommentsCount(commentsCountByPostId.getOrDefault(post.getId(), 0L)));
+                .forEach(post -> {
+                    post.setCommentsCount(commentsCountByPostId.getOrDefault(post.getId(), 0L));
+                    post.setTags(tagsByPostId.getOrDefault(post.getId(), post.getTags()));
+                });
     }
 
     private Post checkAndGetPostById(Long postId) {

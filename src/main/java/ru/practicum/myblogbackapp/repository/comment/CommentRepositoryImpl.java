@@ -16,20 +16,27 @@ import java.util.Map;
 public class CommentRepositoryImpl implements CommentRepositoryCustom {
     private final NamedParameterJdbcTemplate jdbc;
 
-    @Override
-    public Map<Long, Long> countGroupedByPostId(List<Long> postIds) {
-        if (postIds == null || postIds.isEmpty()) {
-            return Map.of();
-        }
-
-        String sql = """
+    private static final String SQL_COUNT_GROUPED_BY_POST_ID = """
             SELECT post_id, count(*) AS cnt
             FROM "post_comments"
             WHERE post_id IN (:postIds)
             GROUP BY post_id
         """;
 
-        return jdbc.query(sql, Map.of("postIds", postIds),rs -> {
+    private static final String SQL_FIND_GROUPED_BY_POST_ID = """
+            SELECT id, post_id, text
+            FROM "post_comments"
+            WHERE post_id IN (:postIds)
+            ORDER BY post_id, id
+        """;
+
+    @Override
+    public Map<Long, Long> countGroupedByPostId(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return jdbc.query(SQL_COUNT_GROUPED_BY_POST_ID, Map.of("postIds", postIds),rs -> {
             Map<Long, Long> map = new HashMap<>();
 
             while (rs.next()) {
@@ -46,14 +53,7 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
             return Map.of();
         }
 
-        String sql = """
-            SELECT id, post_id, text
-            FROM "post_comments"
-            WHERE post_id IN (:postIds)
-            ORDER BY post_id, id
-        """;
-
-        return jdbc.query(sql, rs -> {
+        return jdbc.query(SQL_FIND_GROUPED_BY_POST_ID, Map.of("postIds", postIds),rs -> {
             Map<Long, List<Comment>> map = new LinkedHashMap<>(); // preserving order
 
             while (rs.next()) {

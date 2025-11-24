@@ -13,15 +13,13 @@ import java.util.List;
 
 @Mapper
 public interface PostMapper {
-    PostDto toDto(Post post);
+    PostDto toDto(Post post, Long commentsCount, List<String> tags);
 
-    List<PostDto> toDto(List<Post> posts);
-
+    @Mapping(target = "tags", ignore = true)
+    @Mapping(target = "commentsCount", ignore = true)
     PostPreviewDto toPreviewDto(Post post);
 
     List<PostPreviewDto> toPreviewDto(List<Post> posts);
-
-    PostDto toDto(Post post, Long commentsCount);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "likesCount", ignore = true)
