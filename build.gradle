@@ -15,7 +15,7 @@ java {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release.set(21)
+    options.release = 21
 
     // mapstruct
     options.annotationProcessorPath = configurations.annotationProcessor
@@ -83,5 +83,5 @@ test {
 }
 
 wrapper {
-    gradleVersion '9.0.0'
+    gradleVersion = '9.0.0'
 }

@@ -3,6 +3,7 @@ package ru.practicum.myblogbackapp.service.post;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -61,8 +62,10 @@ public class PostServiceImpl implements PostService {
     public PostsDto findPosts(String search, Integer pageNumber, Integer pageSize) {
         int offset = (pageNumber - 1) * pageSize;
 
-        List<Post> posts = postRepository.findPosts(pageSize, offset);
-        long totalElements = postRepository.count();
+        Pair<List<Post>, Long> postsAndCount = postRepository.findAndCountPosts(search, offset, pageSize);
+
+        List<Post> posts = postsAndCount.getFirst();
+        long totalElements = postsAndCount.getSecond();
 
         int totalPages = (int) Math.ceil((double) totalElements / pageSize);
         if (totalPages == 0) totalPages = 1;   // если нет результатов
@@ -150,6 +153,8 @@ public class PostServiceImpl implements PostService {
     }
 
     private void enrichWithAdditionalFields(List<? extends PostDto> postsDto) {
+        if (postsDto.isEmpty()) return;
+
         List<Long> postIds = postsDto.stream().map(PostDto::getId).toList();
 
         Map<Long, Long> commentsCountByPostId = commentRepository.countGroupedByPostId(postIds);
