@@ -40,3 +40,6 @@ bin/
 
 #database
 db/
+
+#logs
+logs/

@@ -32,6 +32,10 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+
+    testCompileOnly {
+        extendsFrom compileOnly
+    }
 }
 
 dependencyManagement {
@@ -72,10 +76,17 @@ dependencies {
 
     // test
     testImplementation 'org.springframework:spring-test'
+    testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
 
     testImplementation platform("org.junit:junit-bom:$junitBomVersion")
     testImplementation('org.junit.jupiter:junit-jupiter')
     testRuntimeOnly('org.junit.platform:junit-platform-launcher')
+
+    testImplementation 'org.mockito:mockito-core:5.20.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.20.0'
+
+    testImplementation 'org.hamcrest:hamcrest:3.0'
+    testImplementation 'com.jayway.jsonpath:json-path:2.9.0'
 }
 
 test {
