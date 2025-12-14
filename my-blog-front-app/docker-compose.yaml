@@ -1,8 +1,0 @@
-version: '3.8'  
-services:  
-  my-blog-front-app:  
-    build: .
-    container_name: my-blog-front-app
-    ports: 
-      - "80:80"
-#    network_mode: "host" # for windows doesn't work as started in VM
