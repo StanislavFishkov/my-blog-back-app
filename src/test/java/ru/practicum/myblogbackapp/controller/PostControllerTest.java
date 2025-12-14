@@ -4,14 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-import ru.practicum.myblogbackapp.config.AppConfig;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,23 +21,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringJUnitWebConfig(classes = {AppConfig.class})
-@TestPropertySource("classpath:application-test.properties")
+@SpringBootTest(
+        // Cоздаёт mock-версию веб-слоя, без запуска реального сервера
+        webEnvironment = SpringBootTest.WebEnvironment.MOCK
+)
+// Включим автоконфигурирование MockMvc
+@AutoConfigureMockMvc
 class PostControllerTest {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private WebApplicationContext wac;
-
-    @Autowired
     private NamedParameterJdbcTemplate jdbc;
 
+    @Autowired
     private MockMvc mockMvc;
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-
         // Очистим БД
         jdbc.update("DELETE FROM \"posts\"", Collections.emptyMap());
         jdbc.update("DELETE FROM \"tags\"", Collections.emptyMap());

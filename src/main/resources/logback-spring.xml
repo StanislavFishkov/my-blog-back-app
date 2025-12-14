@@ -9,12 +9,9 @@
 
     <!-- ====== Файловый аппендер (для Tomcat) ====== -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- Используем переменную Tomcat -->
-        <file>${catalina.base}/logs/myapp.log</file>
-
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Файл логов с ротацией каждый день -->
-            <fileNamePattern>${catalina.base}/logs/myapp.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/myapp.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
 
