@@ -4,16 +4,19 @@
 
 1. Соберите проект через команду 
 ```bash
-./gradlew clean build
+./mvnw clean package
 ```
-2. Скопируйте war-артефакт из папки "build/libs" и переименуйте его в ROOT.war
-3. ROOT.war переместите в папку "webapps" внутри корневой папки сервера Tomcat
-4. При настройках по умолчанию Tomcat в conf/server.xml для localhost:
+Итоговый артефакт (executable fat jar) будет в папке "target/".
+2. Запустите executable fat jar командой:
+```bash
+   java -jar myblogbackapp-<version>.jar
+```
+Текущая версия проекта указана в pom.xml:
 ```xml
-<Host name="localhost"  appBase="webapps"
-   unpackWARs="true" autoDeploy="true">
-    ...
-</Host>
+<version>0.0.1-SNAPSHOT</version>
 ```
-    произойдет автоматическая распаковка и загрузка артефакта,
-    и его ендпоинты станут доступны по "localhost:8080/"
+Итоговый артефакт в этом случае назывался бы так:
+```
+   myblogbackapp-0.0.1-SNAPSHOT.jar
+```
+3. Приложение стартует по умолчанию на порте 8080.

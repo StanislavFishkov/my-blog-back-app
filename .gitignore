@@ -1,8 +1,7 @@
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
 ### IntelliJ IDEA ###
 .idea
@@ -43,3 +42,6 @@ db/
 
 #logs
 logs/
+
+#my-blog-front-app
+#my-blog-front-app/
